@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (black)
+        run: black --check .
+
+      - name: Run tests
+        run: pytest --cov=. --cov-report=term-missing
+
+      - name: Secrets scan (basic)
+        run: |
+          if grep -RIn --exclude-dir=.git --exclude=".env.example" -E "(AZURE_OPENAI_API_KEY|CDS_API_KEY|FRED_API_KEY)\s*=\s*['\"a-zA-Z0-9]" . | grep -v "\.env\.example" | grep -v "config/settings.py"; then
+            echo "Potential hardcoded secret found — failing build."
+            exit 1
+          fi

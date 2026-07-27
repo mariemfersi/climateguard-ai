@@ -1,0 +1,475 @@
+# ClimateGuard AI
+## An Agentic, Explainable Reinsurance Pricing & Portfolio-Steering Platform for Climate-Adjusted Catastrophe Risk
+
+**Subtitle:** From Static Cat Models to a Living, Reasoning Risk Organism — Multi-Agent LLM Orchestration over Physical, Financial and Regulatory Data for Property & Casualty Reinsurance
+
+**Author positioning:** Portfolio-grade industrial R&D proposal, equivalent to a Master's thesis / corporate innovation-lab deliverable.
+
+---
+
+## 0. Executive Summary
+
+Property-Casualty (P&C) reinsurers price and reserve for catastrophe risk (hurricanes, wildfires, floods, severe convective storms) using vendor catastrophe (cat) models — AIR/Verisk, RMS/Moody's, CoreLogic — that are recalibrated on multi-year cycles, treated as black boxes, and increasingly disconnected from the pace of climate change. Between model vintages, insurers are structurally blind to shifting peril frequency/severity, and actuaries spend enormous manual effort translating model output into underwriting decisions, Solvency II narrative reports, and treaty pricing memos.
+
+**ClimateGuard AI** proposes a production-grade platform that:
+
+1. Continuously ingests physical climate data (satellite, reanalysis, weather-station, sea-surface-temperature, wildfire-risk indices) alongside exposure, claims, and financial-market data, to produce a **dynamically updating, climate-adjusted view of catastrophe risk** rather than a static annual re-parameterization.
+2. Uses an ensemble of specialized ML models (Gradient Boosting for frequency/severity, a Temporal Fusion Transformer for climate-driven peril trend forecasting, a Graph Neural Network for spatial contagion/accumulation risk across a reinsurance portfolio, and a Vision Transformer for satellite-derived exposure verification) fused into a **portfolio loss distribution engine**.
+3. Wraps that engine in a **multi-agent LLM system** (built on Azure OpenAI + Azure AI Search RAG over treaty wordings, Solvency II regulation, and internal actuarial policy) that autonomously drafts treaty pricing memos, answers regulatory questions, runs natural-language "what-if" stress tests, and produces board-ready reports — with every generated number traceable back to SHAP-level explainability and a cited source document.
+4. Is deployed as a full MLOps/LLMOps production system on **Microsoft Azure**, with CI/CD, drift detection, automatic retraining, and a React/Next.js + Power BI hybrid frontend.
+
+This is not "an ML model that predicts claims." It is an **actuarial decision-support organism**: a system that continuously re-estimates catastrophe risk as the physical world changes, explains *why* the number moved, and autonomously produces the regulatory and commercial artifacts that today consume thousands of actuarial hours per treaty renewal cycle.
+
+---
+
+## 1. The Business Problem
+
+### 1.1 Where the money actually is
+
+Catastrophe risk is the single largest source of earnings volatility for P&C (re)insurers. A single mis-priced treaty on a Florida hurricane book or a California wildfire book can wipe out a full underwriting year of profit. Cat-bond and reinsurance pricing directly depends on the tail of the loss distribution — the part of the distribution actuaries understand *least* precisely, because tail events are by definition rare and non-stationary.
+
+### 1.2 Current industry limitations
+
+- **Vendor cat models are updated on 3–5 year cycles.** Climate change is nonstationary on a much faster timescale — sea-surface temperature anomalies, wildfire fuel-moisture indices, and coastal exposure all shift year to year. Actuaries are effectively pricing 2026 risk with a model calibrated on a pre-2023 climate.
+- **Cat models are closed-source black boxes.** Actuaries apply "loadings" and "management adjustments" on top of vendor output through expert judgment — a process that is inconsistent across underwriters, hard to audit, and impossible to explain in a Solvency II Own Risk and Solvency Assessment (ORSA) narrative with quantitative rigor.
+- **Exposure data is stale and self-reported.** Insureds report property characteristics (roof type, construction class, elevation) at policy inception and rarely update them. Satellite and aerial imagery that could verify these attributes in near-real-time is not systematically integrated into pricing.
+- **Portfolio accumulation risk is under-modeled spatially.** Traditional actuarial aggregation (zonal accumulation limits) treats risk concentration as a lookup-table problem, not a network/graph problem, so it misses second-order spatial correlation (e.g., a hurricane's storm surge plus subsequent inland flooding hitting correlated exposures across nominally "diversified" zones).
+- **Reporting is a manual bottleneck.** A treaty renewal pricing memo, a Solvency II SCR (Solvency Capital Requirement) narrative, or a rating-agency capital model submission each take a team of actuaries days to weeks to draft, because they require translating quantitative model output into qualitative narrative under strict regulatory templates (Solvency II Pillar 3, SFCR, RSR).
+
+### 1.3 Why current actuarial methods are insufficient
+
+Classical actuarial pricing (frequency-severity GLMs, extreme value theory fitted to a static hazard model) assumes **stationarity** — that the statistical process generating cat losses today is the same one that generated historical losses. Climate change is precisely a violation of that assumption. GLMs also do not naturally fuse heterogeneous, high-dimensional physical data (satellite rasters, gridded reanalysis fields) with tabular exposure/claims data, and produce no natural language artifact for regulators or the board — that translation step remains 100% human, 100% manual, every quarter.
+
+### 1.4 Why AI creates a revolutionary improvement (not just automation)
+
+AI does not just make the existing workflow faster — it changes what is possible:
+
+- **Non-stationary risk becomes learnable.** A Temporal Fusion Transformer conditioned on climate indices can learn *how* peril frequency/severity trends are shifting, rather than assuming they are fixed — something a GLM fitted once every few years structurally cannot do.
+- **Spatial accumulation becomes a first-class model object.** A Graph Neural Network represents the portfolio as a graph (nodes = insured locations/zones, edges = physical proximity and correlated peril exposure), learning accumulation risk directly rather than through hand-built zonal tables.
+- **Exposure verification becomes continuous and cheap.** A Vision Transformer over satellite imagery can flag roof degradation, new construction, or vegetation encroachment (wildfire fuel) automatically, instead of waiting for the next on-site survey.
+- **The regulatory/narrative bottleneck disappears.** A retrieval-augmented multi-agent LLM system, grounded in the *actual* SHAP explanations and the *actual* treaty wordings and *actual* regulation text, can draft first-pass pricing memos and Solvency II narratives that an actuary reviews and edits rather than writes from a blank page — collapsing a multi-day task to a same-day review.
+- **Explainability becomes native, not bolted on.** Every AI-produced number is paired with a SHAP-based explanation and a natural-language rationale generated by the LLM *from* that SHAP output — closing the loop between "black box prediction" and "auditable actuarial judgment" that today is bridged entirely by unaided human reasoning.
+
+---
+
+## 2. What Makes This Innovative (vs. Existing Solutions)
+
+| Existing approach | ClimateGuard AI |
+|---|---|
+| Vendor cat models (AIR, RMS) recalibrated every 3–5 years | Continuously updating climate-conditioned frequency/severity model, retrained on a rolling schedule with drift-triggered retraining |
+| Kaggle-style "predict claim amount" regression | Full portfolio tail-risk distribution (VaR/TVaR) engine feeding into treaty pricing, not a point prediction |
+| Actuary manually blends cat model + judgment | Explainable ML ensemble with SHAP-grounded "judgment layer" that is itself auditable |
+| Zonal accumulation tables | Graph Neural Network learning spatial/peril correlation structure directly from claims + physical data |
+| Static aerial survey exposure data | Vision Transformer continuous satellite-based exposure verification pipeline |
+| Actuaries hand-write pricing memos & Solvency II narratives | Multi-agent LLM system (RAG-grounded) drafts memos/narratives/regulatory Q&A with full citation trail |
+| BI dashboards showing historical loss ratios | Natural-language "what-if" scenario simulation chatbot driving live re-runs of the loss model |
+| No unified system boundary | End-to-end, cloud-native, MLOps/LLMOps-governed platform, deployable in an actual reinsurer's Azure tenant |
+
+This is a genuine fusion of **actuarial science** (frequency/severity theory, extreme value theory, Solvency II SCR formulas), **physical/climate data science**, **modern deep learning architectures selected for the right reasons** (not "throw a transformer at it"), and **agentic generative AI** used for its actual comparative advantage: language-native reasoning and drafting over structured explainability outputs, not as a novelty chatbot bolted onto a dashboard.
+
+---
+
+## 3. End-to-End Architecture
+
+### 3.1 High-level flow
+
+```
+                         PHYSICAL / CLIMATE DATA          FINANCIAL & MARKET DATA        EXPOSURE & CLAIMS DATA
+                     (NOAA, Copernicus, ERA5, NASA)      (FRED, market indices)       (synthetic + public insurance data)
+                                 |                                  |                              |
+                                 v                                  v                              v
+                    ┌───────────────────────────────────────────────────────────────────────────────────┐
+                    │                          Azure Data Factory (ETL / ELT Orchestration)               │
+                    └───────────────────────────────────────────────────────────────────────────────────┘
+                                                          |
+                                                          v
+                    ┌───────────────────────────────────────────────────────────────────────────────────┐
+                    │           Azure Data Lake Storage Gen2 (Bronze / Silver / Gold Zones)                │
+                    └───────────────────────────────────────────────────────────────────────────────────┘
+                                                          |
+                                                          v
+                    ┌───────────────────────────────────────────────────────────────────────────────────┐
+                    │     Azure Databricks — Cleaning, Geo-joins, Feature Engineering, Feature Store       │
+                    └───────────────────────────────────────────────────────────────────────────────────┘
+                                                          |
+                       ┌──────────────────────────────────┼──────────────────────────────────┐
+                       v                                  v                                  v
+              ┌────────────────┐               ┌────────────────────┐             ┌────────────────────┐
+              │ Frequency/      │               │ Temporal Fusion     │             │ Graph Neural Net    │
+              │ Severity        │               │ Transformer (peril  │             │ (portfolio spatial  │
+              │ (XGBoost/       │               │ trend forecasting)  │             │ accumulation risk)  │
+              │ LightGBM)       │               └────────────────────┘             └────────────────────┘
+              └────────────────┘                          |                                  |
+                       |                                  |                                  |
+                       └──────────────────┬────────────────┴──────────────────┬───────────────┘
+                                           v                                    v
+                                ┌────────────────────────┐         ┌────────────────────────────┐
+                                │ Vision Transformer       │         │ Portfolio Loss Distribution │
+                                │ (satellite exposure       │────────▶│ Engine (Monte Carlo + ML     │
+                                │ verification)             │         │ ensemble fusion → VaR/TVaR)  │
+                                └────────────────────────┘         └────────────────────────────┘
+                                                                              |
+                                                                              v
+                                                              ┌───────────────────────────────┐
+                                                              │      Azure Machine Learning     │
+                                                              │  (training, registry, endpoints) │
+                                                              └───────────────────────────────┘
+                                                                              |
+                             ┌────────────────────────────────────────────────┼─────────────────────────────────────┐
+                             v                                                v                                     v
+                ┌─────────────────────────┐                   ┌───────────────────────────┐          ┌───────────────────────────┐
+                │  Explainability Service   │                   │   FastAPI Model-Serving     │          │  Azure AI Search (RAG index) │
+                │  (SHAP / LIME / Counter-  │                   │   Layer (AKS-hosted)         │          │  treaty wordings, Solvency II│
+                │  factuals)                │                   └───────────────────────────┘          │  text, actuarial policy docs │
+                └─────────────────────────┘                                  |                          └───────────────────────────┘
+                             |                                                |                                     |
+                             └────────────────────────┬───────────────────────┴─────────────────────────────────────┘
+                                                        v
+                                       ┌───────────────────────────────────────────┐
+                                       │   Multi-Agent LLM Orchestration Layer        │
+                                       │   (Azure OpenAI, agentic pipeline)            │
+                                       │   Pricing Agent · Regulatory Agent ·          │
+                                       │   Scenario Agent · Report-Writer Agent        │
+                                       └───────────────────────────────────────────┘
+                                                        |
+                                                        v
+                                       ┌───────────────────────────────────────────┐
+                                       │   API Gateway (Azure API Management)          │
+                                       └───────────────────────────────────────────┘
+                                                        |
+                              ┌─────────────────────────┼─────────────────────────┐
+                              v                          v                          v
+                    ┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
+                    │ React/Next.js UI   │      │ Power BI Reports   │      │ AI Chatbot Widget  │
+                    └──────────────────┘      └──────────────────┘      └──────────────────┘
+
+                              ┌──────────────────────────────────────────────────────────┐
+                              │  Cross-cutting: Azure Monitor · Azure Key Vault · MLflow ·   │
+                              │  GitHub Actions CI/CD · AKS · Data/Model Drift Detection      │
+                              └──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. Data Sources and Fusion Strategy
+
+| Domain | Source | Nature |
+|---|---|---|
+| Historical hurricane tracks & intensity | NOAA HURDAT2 | Public API/CSV |
+| Reanalysis climate fields (SST, pressure, wind) | ECMWF ERA5 (Copernicus Climate Data Store) | Public API, gridded NetCDF |
+| Wildfire risk / fuel moisture | NASA FIRMS, US Forest Service fuel moisture data | Public API |
+| Flood / precipitation | NOAA Atlas 14, GPM satellite precipitation | Public API |
+| Satellite imagery (exposure verification) | Sentinel-2 (ESA Copernicus, free), Planet (commercial, optional) | Raster imagery |
+| Economic indicators (inflation, construction cost index, interest rates) | FRED (Federal Reserve Economic Data) API | Public API |
+| Financial market data (cat bond spreads, reinsurance pricing indices) | Public market data providers (e.g., Artemis Cat Bond index, Yahoo Finance for rate proxies) | Public/commercial API |
+| Exposure & claims data | **Synthetic actuarial data generation** (see §4.1) calibrated against public NAIC and Florida OIR aggregate statistics | Synthetic, statistically realistic |
+| Regulatory text | EIOPA Solvency II Delegated Regulation, NAIC ORSA guidance | Public documents (PDF/HTML) |
+| Treaty wordings | Synthetic/anonymized sample treaty templates (standard market clauses, publicly available reinsurance clause libraries) | Public templates + synthetic |
+
+### 4.1 Why synthetic exposure/claims data — and how
+
+Real per-policy insurance exposure and claims data is proprietary and cannot be legally used in a portfolio project. ClimateGuard AI generates a **statistically realistic synthetic book of business**: a simulated portfolio of tens of thousands of insured locations with realistic geographic clustering (using US Census block-group population density as a scaffold), construction attributes drawn from realistic distributions (calibrated against publicly available NAIC/Florida OIR aggregate loss statistics), and simulated claims generated by running the *actual* physical hazard data (e.g., real HURDAT2 tracks) through a vulnerability curve (a standard actuarial damage function relating wind speed / flood depth to expected damage ratio). This means the loss experience used to train and validate the models is physically grounded in real climate events, even though individual policies are synthetic — this is standard practice in actuarial research and cat-model validation.
+
+### 4.2 Fusion into one production dataset
+
+Azure Databricks performs geo-joins: each insured location (lat/long) is joined to the nearest ERA5 grid cell, the nearest NOAA storm track distance-decay feature, county-level wildfire risk index, and satellite tile ID. The result is a **Gold-layer feature table** keyed by (location_id, as_of_date) containing physical hazard features, exposure attributes, and macro-financial features, registered in **Azure ML Feature Store** for consistent train/serve feature parity.
+
+---
+
+## 5. AI Models — What, and Why
+
+| Model | Task | Why this model specifically |
+|---|---|---|
+| **XGBoost / LightGBM** (frequency-severity, two-part model) | Baseline expected loss per location per peril | Actuarial industry standard for tabular frequency-severity modeling; fast, robust to small-to-medium tabular data, natively supports monotonic constraints (e.g., loss must increase with wind speed) which regulators favor for interpretability |
+| **CatBoost** (secondary/ensemble member) | Handles high-cardinality categorical exposure features (construction class, occupancy type) natively | Reduces target-leakage risk from manual categorical encoding, used as an ensemble diversifier against XGBoost |
+| **Temporal Fusion Transformer (TFT)** | Multi-horizon forecasting of peril frequency/severity trend conditioned on climate covariates (SST anomaly trajectories, ENSO index) | Purpose-built for multi-horizon time series with both static and time-varying covariates, and produces native attention-based interpretability — directly addresses the "climate non-stationarity" problem that static GLMs cannot |
+| **Graph Neural Network (GraphSAGE / GAT)** | Portfolio spatial accumulation risk — learns which locations are jointly exposed to correlated loss given peril footprint overlap | Reinsurance accumulation risk is fundamentally a network problem (spatial correlation, storm-surge-plus-inland-flood cascades); GNNs learn this structure directly from data instead of hand-built zonal tables |
+| **Vision Transformer (ViT)**, fine-tuned | Satellite image classification/segmentation for exposure verification (roof condition, vegetation proximity, new construction detection) | State-of-the-art for image understanding at scale; ViT's patch-based global attention is well suited to detecting diffuse features like vegetation encroachment across a property parcel |
+| **Monte Carlo Simulation Engine** (fusing above outputs) | Full portfolio loss distribution (Value-at-Risk, Tail-VaR at 99.5% per Solvency II SCR) | Actuarial/regulatory requirement — Solvency II SCR is fundamentally a 1-in-200-year VaR calculation; ML point predictions must be fused into a full simulated distribution, not just reported as a single number |
+| **Azure OpenAI LLM (GPT-4-class)**, multi-agent | Report drafting, regulatory Q&A, scenario narration, explanation generation | LLMs' comparative advantage is language reasoning and synthesis over structured inputs (SHAP values, retrieved regulation text) — this is precisely the actuarial bottleneck task, not something gradient boosting or GNNs can do |
+| **SHAP / LIME / Counterfactual explainers** | Explainability layer over all tabular models | Regulatory requirement (Solvency II, NAIC model governance) for explainable, auditable pricing factors |
+
+*(Not every listed candidate architecture is force-fit; each one is included because it solves a distinct sub-problem — frequency/severity, trend non-stationarity, spatial accumulation, exposure verification, and narrative synthesis — that the others structurally cannot.)*
+
+---
+
+## 6. Explainable AI Layer
+
+- **SHAP (TreeSHAP)** on the XGBoost/LightGBM/CatBoost ensemble → per-location, per-peril feature attribution (e.g., "elevation +12% to loss cost, roof age +8%, distance to coast −5%").
+- **Attention-weight extraction** from the TFT → which historical time steps and which climate covariates drove the frequency/severity trend forecast.
+- **GNNExplainer**-style subgraph extraction from the GNN → which neighboring locations are driving a given location's accumulation-risk score.
+- **Counterfactual explanations** ("if roof were Class 4 impact-resistant instead of Class 1, expected loss cost would fall by X%") — directly actionable for underwriting risk-improvement recommendations.
+- All explainability outputs are stored as structured JSON and passed as **grounding context** to the LLM report-writer agent, so every sentence of a generated pricing memo is traceable to a specific SHAP value or attention weight — not a hallucinated narrative.
+
+---
+
+## 7. Generative AI / Multi-Agent LLM Layer
+
+### 7.1 Agent roster
+
+1. **Pricing Agent** — given a treaty submission (layer, attachment point, limit), retrieves the relevant portfolio loss distribution output and SHAP explanations, and drafts a first-pass technical pricing memo with rate-on-line recommendation and rationale.
+2. **Regulatory Agent** — RAG-grounded over EIOPA Solvency II text and internal actuarial policy documents (indexed in Azure AI Search); answers questions like "does this treaty structure trigger Article 105 SCR sub-module X?" with citations to the actual regulation paragraph.
+3. **Scenario Agent** — parses natural-language what-if requests ("what happens to the Florida wind book if Category 5 landfall frequency rises 20% and construction-cost inflation is 8%?"), translates them into structured parameter overrides, triggers a live Monte Carlo re-run via the API, and narrates the result.
+4. **Report-Writer Agent** — assembles final board-ready / Solvency II SFCR-style narrative reports by orchestrating the outputs of the other three agents into a structured document with embedded charts (via Power BI export) and citations.
+
+### 7.2 RAG architecture
+
+- Documents (treaty wordings, Solvency II regulation, internal policy) chunked and embedded via **Azure OpenAI embeddings**, indexed in **Azure AI Search** with hybrid (vector + keyword) retrieval and semantic ranking.
+- Agent orchestration implemented with a lightweight state-machine/tool-calling pattern (each agent = an Azure OpenAI chat completion with a defined tool schema calling into the FastAPI model-serving layer and Azure AI Search retriever).
+- **Guardrails:** every numeric claim in a report is required to be sourced from a tool call output (SHAP JSON, Monte Carlo result, or a retrieved regulation citation) — the agent prompt explicitly forbids unsupported numeric generation, and a post-generation validator cross-checks every number in the draft against the structured tool outputs before the report is released for human review.
+
+---
+
+## 8. API Design
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/predict` | POST | Returns frequency/severity point estimates and portfolio VaR/TVaR for a given exposure set |
+| `/stress-test` | POST | Runs a predefined regulatory stress scenario (e.g., 1-in-100-year hurricane) against the current portfolio |
+| `/simulate` | POST | Runs a full Monte Carlo simulation with custom parameter overrides |
+| `/what-if` | POST | Natural-language scenario input, routed through the Scenario Agent, returns structured + narrated results |
+| `/explain/{prediction_id}` | GET | Returns SHAP/attention/counterfactual explanation for a given prediction |
+| `/generate-report` | POST | Triggers the Report-Writer Agent to assemble a treaty pricing memo or Solvency II narrative |
+| `/regulatory-qa` | POST | Natural-language regulatory question, routed to the Regulatory Agent (RAG) |
+| `/dashboard` | GET | Serves aggregated portfolio metrics for the React/Power BI frontend |
+| `/exposure/verify` | POST | Triggers Vision Transformer satellite exposure verification for a given location/parcel |
+| `/health`, `/metrics` | GET | Service health and Prometheus-style metrics for Azure Monitor |
+
+All endpoints are versioned (`/v1/...`), authenticated via Azure AD (OAuth2), and exposed through **Azure API Management** with rate limiting and request logging to Azure Monitor.
+
+---
+
+## 9. Azure Architecture & Services
+
+| Layer | Azure Service | Role |
+|---|---|---|
+| Ingestion / orchestration | **Azure Data Factory** | Scheduled and event-driven pipelines pulling NOAA/ERA5/FRED/NASA data |
+| Storage | **Azure Data Lake Storage Gen2** | Bronze (raw) / Silver (cleaned) / Gold (feature-ready) medallion architecture |
+| Processing | **Azure Databricks** (PySpark, Delta Lake) | Large-scale geo-joins, feature engineering, Delta Live Tables for pipeline reliability |
+| Feature management | **Azure ML Feature Store** | Train/serve feature consistency |
+| Model training / registry | **Azure Machine Learning** | Experiment tracking (integrated with MLflow), model registry, managed compute clusters (GPU for ViT/TFT, CPU for GBM) |
+| Generative AI | **Azure OpenAI Service** | GPT-4-class chat/completions + embeddings for the multi-agent layer |
+| Retrieval | **Azure AI Search** | Hybrid vector/keyword RAG index over regulation/treaty text |
+| Serving | **Azure Kubernetes Service (AKS)** | Hosts FastAPI model-serving layer, agent orchestration service, containerized microservices |
+| Serverless glue | **Azure Functions** | Lightweight event-driven tasks (e.g., triggering retraining on drift alert, satellite tile pre-processing) |
+| Secrets | **Azure Key Vault** | API keys, connection strings, Azure OpenAI keys |
+| Monitoring | **Azure Monitor + Application Insights** | Service health, latency, data/model drift dashboards |
+| API management | **Azure API Management** | Gateway, auth, throttling, versioning |
+| BI / reporting | **Power BI** (Embedded) | Executive dashboards, drill-down loss/exposure analytics |
+| CI/CD | **GitHub Actions** + Azure DevOps pipelines | Build/test/deploy automation into AKS and Azure ML endpoints |
+| IaC | **Terraform / Bicep** | Reproducible Azure infrastructure provisioning |
+
+---
+
+## 10. MLOps / LLMOps
+
+- **Experiment tracking & registry:** MLflow (integrated with Azure ML) tracks every training run's parameters, metrics, and artifacts; the model registry gates promotion from Staging → Production behind automated validation (backtest loss ratio, calibration checks, fairness checks on rating factors).
+- **CI/CD:** GitHub Actions pipeline runs unit tests, data schema validation (Great Expectations), model validation, container build, and deploys to AKS staging, then production, on merge to `main`, with manual approval gate for production promotion (standard practice for regulated financial systems).
+- **Containerization:** Docker images per service (model-serving API, agent orchestration service, ETL jobs), orchestrated via AKS with horizontal pod autoscaling.
+- **Data drift & model drift detection:** Azure ML Data Collector + a scheduled Databricks job computes population stability index (PSI) on incoming exposure features and Kolmogorov–Smirnov tests on physical hazard feature distributions vs. training baseline; drift beyond threshold triggers an Azure Function that kicks off an automatic retraining pipeline and opens a GitHub issue for actuarial sign-off before promotion.
+- **Automatic retraining cadence:** Monthly scheduled retraining of the GBM/CatBoost frequency-severity models on rolling data; quarterly retraining of the TFT and GNN (more compute-intensive); the LLM agents are not retrained but their RAG index is refreshed weekly and prompt/tool schemas are versioned.
+- **LLMOps-specific governance:** prompt versioning in source control, automated regression testing of agent outputs against a labeled "gold set" of prior actuarial memos (semantic similarity + numeric-fidelity checks), and human-in-the-loop review gate before any generated report is externally distributed.
+
+---
+
+## 11. Frontend
+
+- **React + Next.js** application: portfolio map view (Mapbox/Leaflet with exposure/hazard overlays), scenario simulation console, treaty pricing workbench, and an embedded **AI chatbot widget** (Scenario Agent + Regulatory Agent front-end).
+- **Power BI Embedded** dashboards for executive/board-level reporting: loss ratio trends, portfolio VaR/TVaR over time, accumulation heat maps.
+- **Explainability panel:** every prediction shown in the UI has an expandable SHAP waterfall chart and a plain-language LLM-generated explanation of that chart.
+
+---
+
+## 12. Database Schema (core tables, simplified)
+
+```
+locations(location_id PK, lat, lon, county_fips, construction_class, roof_type,
+          year_built, occupancy_type, tiv_usd)
+
+policies(policy_id PK, location_id FK, effective_date, expiry_date,
+         limit_usd, deductible_usd, peril_coverage[])
+
+claims(claim_id PK, policy_id FK, loss_date, peril_type, cause_of_loss,
+       incurred_loss_usd, paid_loss_usd, status)
+
+hazard_features(location_id FK, as_of_date, sst_anomaly, wind_speed_return_period_100yr,
+                 flood_depth_return_period_100yr, wildfire_fuel_moisture_index)
+
+model_predictions(prediction_id PK, location_id FK, model_name, model_version,
+                   as_of_date, expected_loss_usd, var_995, tvar_995)
+
+explanations(prediction_id FK, feature_name, shap_value, rank)
+
+treaties(treaty_id PK, cedent_name, layer_attachment_usd, layer_limit_usd,
+         rate_on_line, effective_date)
+
+agent_reports(report_id PK, treaty_id FK, report_type, generated_text,
+              citations JSON, generated_at, reviewed_by, approved BOOLEAN)
+```
+
+Operational store: **Azure SQL Database** (transactional tables above); analytical store: **Delta Lake on ADLS Gen2** (Gold layer, feature history, model predictions at scale) queried via Databricks SQL / Power BI DirectQuery.
+
+---
+
+## 13. Folder Structure
+
+```
+climateguard-ai/
+├── infra/                     # Terraform/Bicep IaC for Azure resources
+├── data_pipeline/
+│   ├── ingestion/              # ADF pipeline definitions, connectors (NOAA, ERA5, FRED, NASA)
+│   ├── databricks_jobs/        # PySpark notebooks/jobs: cleaning, geo-join, feature engineering
+│   └── great_expectations/     # Data quality/schema validation suites
+├── ml/
+│   ├── frequency_severity/     # XGBoost/LightGBM/CatBoost training code
+│   ├── tft_climate_trend/      # Temporal Fusion Transformer training code
+│   ├── gnn_accumulation/       # GraphSAGE/GAT training code
+│   ├── vit_exposure/           # Vision Transformer fine-tuning code
+│   ├── monte_carlo_engine/     # Portfolio loss distribution simulation
+│   └── explainability/         # SHAP/LIME/counterfactual modules
+├── agents/
+│   ├── pricing_agent/
+│   ├── regulatory_agent/
+│   ├── scenario_agent/
+│   ├── report_writer_agent/
+│   └── orchestrator/           # Agent routing/state machine
+├── serving_api/                 # FastAPI app, Dockerfile, endpoint definitions
+├── rag_index/                   # Azure AI Search index build scripts, chunking/embedding
+├── frontend/
+│   ├── web_app/                 # React/Next.js
+│   └── powerbi/                 # PBIX templates, DAX measures
+├── mlops/
+│   ├── mlflow/
+│   ├── github_actions/          # CI/CD workflow YAMLs
+│   └── monitoring/              # Drift detection jobs, Azure Monitor dashboards config
+├── tests/
+├── docs/
+└── README.md
+```
+
+---
+
+## 14. Technology Stack Summary
+
+- **Languages:** Python (ML/data/agents/API), TypeScript (frontend), SQL (Databricks SQL, Azure SQL), DAX (Power BI).
+- **ML/DL:** scikit-learn, XGBoost, LightGBM, CatBoost, PyTorch (TFT via `pytorch-forecasting`, GNN via PyTorch Geometric, ViT via `transformers`), SHAP, LIME, `dice-ml` (counterfactuals).
+- **Data engineering:** PySpark, Delta Lake, Great Expectations, xarray/NetCDF (climate data).
+- **GenAI:** Azure OpenAI SDK, LangChain or a lightweight custom agent orchestrator, Azure AI Search SDK.
+- **Serving:** FastAPI, Uvicorn/Gunicorn, Docker, AKS, Azure API Management.
+- **MLOps:** MLflow, Azure ML SDK v2, GitHub Actions, Terraform/Bicep.
+- **Frontend:** React, Next.js, Mapbox GL/Leaflet, Power BI Embedded SDK.
+- **Monitoring:** Azure Monitor, Application Insights, Prometheus/Grafana (optional supplementary).
+
+---
+
+## 15. Functional Workflows
+
+### 15.1 ML Workflow
+Ingest → validate schema (Great Expectations) → clean/geo-join (Databricks) → feature store write (Azure ML Feature Store) → train (XGBoost/LightGBM/CatBoost, TFT, GNN, ViT — each with its own Azure ML pipeline) → validate (backtest, calibration, fairness) → register in MLflow/Azure ML Model Registry → deploy to AKS as a versioned endpoint behind a canary rollout.
+
+### 15.2 AI (Agentic) Workflow
+User/API request → Orchestrator classifies intent (pricing / regulatory / scenario / report) → routes to the relevant agent → agent calls tools (model-serving API, Azure AI Search retriever, Monte Carlo engine) → agent drafts response strictly grounded in tool outputs → numeric-fidelity validator checks the draft → response returned with citations → (for reports) queued for actuarial human review/approval before distribution.
+
+### 15.3 DevOps / Deployment Workflow
+Feature branch → PR → GitHub Actions runs unit + integration tests + data/model validation → merge to `main` → build Docker images → deploy to AKS staging namespace → automated smoke tests → manual approval gate → promote to production namespace with blue/green deployment → Azure Monitor alerting active immediately post-deploy.
+
+---
+
+## 16. 12-Week Delivery Timeline
+
+| Week | Milestone |
+|---|---|
+| 1 | Azure environment setup (IaC), data source access, project scaffolding |
+| 2 | Ingestion pipelines (ADF) for NOAA/ERA5/FRED/NASA; raw Bronze layer populated |
+| 3 | Synthetic exposure/claims book generation; Silver layer cleaning jobs |
+| 4 | Feature engineering + Gold layer + Feature Store; Great Expectations suites |
+| 5 | Frequency-severity model (XGBoost/LightGBM/CatBoost) trained and validated |
+| 6 | Temporal Fusion Transformer trained on climate-conditioned peril trends |
+| 7 | Graph Neural Network for portfolio accumulation risk |
+| 8 | Vision Transformer exposure-verification pipeline (satellite imagery) |
+| 9 | Monte Carlo portfolio loss distribution engine; SHAP/LIME/counterfactual explainability layer |
+| 10 | Multi-agent LLM layer (Pricing, Regulatory, Scenario, Report-Writer agents) + RAG index |
+| 11 | FastAPI serving layer, API Management, React/Next.js frontend, Power BI dashboards |
+| 12 | MLOps hardening (CI/CD, drift detection, monitoring), documentation, portfolio packaging |
+
+---
+
+## 17. Risks and Mitigations
+
+| Risk | Mitigation |
+|---|---|
+| Synthetic data not realistic enough to be credible | Calibrate synthetic claims generation against published NAIC/Florida OIR aggregate loss statistics; validate against real historical HURDAT2-driven loss patterns |
+| LLM hallucination in regulatory/pricing narrative | Strict RAG grounding + post-generation numeric-fidelity validator + mandatory human review gate before distribution |
+| Climate data volume/complexity (NetCDF, gridded reanalysis) | Use Databricks-native geospatial libraries (e.g., `xarray`, `rioxarray`) and pre-aggregate to location-level features rather than processing raw grids at serve time |
+| Model explainability regulatory sufficiency | Align explainability outputs explicitly with EIOPA Solvency II Article 41/44 model governance expectations |
+| Scope creep (this is a very large system) | Deliver a vertical slice first (single peril, single region — e.g., Florida hurricane) end-to-end before horizontal expansion to multi-peril |
+
+---
+
+## 18. Deliverables
+
+1. Public GitHub repository with the full folder structure above.
+2. Deployed (or deployable-via-IaC) Azure environment.
+3. A recorded demo: natural-language what-if scenario → live Monte Carlo re-run → generated pricing memo with citations.
+4. A written technical report (this document, extended with implementation results).
+5. A Power BI executive dashboard.
+6. A model card and data card set (for governance/portfolio credibility).
+
+## 19. Expected KPIs
+
+- Model calibration: predicted vs. actual loss ratio within ±5% on held-out backtest years.
+- Tail risk accuracy: 99.5% VaR backtest coverage consistent with Solvency II SCR validation standards.
+- Report drafting time reduction: target 70–90% reduction in first-draft time for a treaty pricing memo (from days to under an hour of agent generation + human review).
+- Numeric-fidelity validator pass rate: >99% of generated report numbers traceable to a tool-call source with zero unsupported figures reaching human review.
+- API latency: p95 < 500ms for `/predict`, < 5s for `/generate-report` (LLM-bound).
+
+---
+
+## 20. How Recruiters/Evaluators Would Assess This Project
+
+**Skills demonstrated:**
+- Actuarial science: frequency-severity modeling, extreme value theory framing, Solvency II SCR/VaR concepts, treaty pricing mechanics.
+- Classical ML: XGBoost/LightGBM/CatBoost, model validation, calibration.
+- Deep learning: Temporal Fusion Transformer, Graph Neural Networks, Vision Transformers — each justified by the specific sub-problem, not decorative.
+- Generative AI / agentic systems: multi-agent orchestration, RAG, tool-calling, hallucination mitigation, LLMOps.
+- Data engineering: ETL/ELT, medallion architecture, geospatial data fusion, data quality validation.
+- MLOps: CI/CD, model registry, drift detection, automated retraining.
+- Cloud architecture: a coherent, realistic, production-shaped Azure design (not a toy notebook).
+- Full-stack delivery: API design, frontend, BI reporting.
+- Regulatory/domain fluency: Solvency II, NAIC, actuarial governance — signals genuine insurance-industry understanding, not generic data science.
+
+This breadth, combined with a *coherent business narrative* (why does this matter, what does it replace, what does it make possible), is what separates a portfolio project evaluators fast-forward past from one that gets a callback.
+
+---
+
+## 21. Extension to PhD or Startup
+
+- **PhD angle:** formal research questions around (a) non-stationary extreme value theory under a learned, climate-conditioned hazard trend (bridging actuarial EVT and deep learning for distribution shift), (b) causal/graph-based accumulation risk estimation under limited claims data, and (c) verifiable/grounded generation for regulated financial narrative text (a genuinely open NLP problem: how to guarantee zero-hallucination numeric grounding in long-form generation).
+- **Startup angle:** a vertical SaaS product for mid-tier reinsurers and MGAs (managing general agents) who cannot afford in-house cat-model R&D teams — offering "climate-adjusted cat pricing as a service" with the multi-agent reporting layer as the wedge product (fast, defensible ROI: actuarial time savings), and the ML pricing engine as the long-term moat.
+
+---
+
+## 22. GitHub README Structure (recommended)
+
+```
+# ClimateGuard AI
+One-line pitch + architecture diagram (rendered PNG/SVG)
+
+## Problem
+## Solution overview
+## Architecture (diagram + explanation)
+## Tech stack
+## Repo structure
+## Quickstart (local dev with docker-compose)
+## Azure deployment (Terraform/Bicep instructions)
+## Demo (GIF/video link)
+## Model cards / data cards
+## Roadmap
+## License
+```
+
+---
+
+## 23. Closing Note
+
+ClimateGuard AI is deliberately scoped as a **vertical slice first** (a single peril — hurricane — and a single region — Florida/Gulf Coast) so that it can be built as a real, working, demoable system within the 12-week timeline, while the architecture is written to generalize horizontally (additional perils: wildfire, flood, severe convective storm; additional regions) without redesign. This is the same "ship a narrow, real, production-shaped slice, architected to scale" discipline that separates an industrial R&D deliverable from a speculative diagram — and it is the strongest signal a portfolio project can send.

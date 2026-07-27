@@ -1,0 +1,20 @@
+# Heavier, phase-specific ML dependencies.
+# Deliberately kept OUT of pyproject.toml's core dependencies so that Phase 0-3
+# environment setup stays fast and lightweight. Install this file only when you
+# reach the phase that needs it (see docs/environment_setup.md).
+
+# --- Phase 5: Temporal Fusion Transformer ---
+# torch>=2.2
+# pytorch-forecasting>=1.0
+
+# --- Phase 6: Graph Neural Network ---
+# torch-geometric>=2.5
+
+# --- Phase 7: Vision Transformer ---
+# transformers>=4.38
+# torchvision>=0.17
+
+# --- Phase 9: Multi-agent LLM layer ---
+# openai>=1.14
+# azure-search-documents>=11.4
+# azure-identity>=1.15

@@ -1,0 +1,44 @@
+# Secrets
+.env
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Data (Bronze/Silver/Gold layers are regenerable via the ingestion/synthetic
+# scripts — never commit full datasets, only small fixtures under tests/fixtures/)
+data_pipeline/bronze/
+data_pipeline/silver/
+data_pipeline/gold/
+*.parquet
+*.nc
+!tests/fixtures/**
+
+# ML artifacts
+mlruns/
+*.ckpt
+*.pt
+*.pth
+
+# Node / frontend
+frontend/web_app/node_modules/
+frontend/web_app/.next/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Terraform
+infra/**/.terraform/
+infra/**/*.tfstate
+infra/**/*.tfstate.backup

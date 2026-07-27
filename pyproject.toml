@@ -1,0 +1,70 @@
+[project]
+name = "climateguard-ai"
+version = "0.1.0"
+description = "Agentic, explainable, climate-adjusted reinsurance pricing & portfolio-steering platform."
+requires-python = ">=3.11,<3.13"
+readme = "README.md"
+
+dependencies = [
+    # Core
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "python-dotenv>=1.0",
+
+    # Data
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "pyarrow>=15.0",
+    "requests>=2.31",
+    "xarray>=2024.2",
+    "netCDF4>=1.6",
+    "geopandas>=0.14",
+
+    # API
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+
+    # ML (baseline; deep-learning extras added in later phases' requirements-ml.txt)
+    "scikit-learn>=1.4",
+    "xgboost>=2.0",
+    "lightgbm>=4.3",
+    "catboost>=1.2",
+    "shap>=0.45",
+
+    # Data quality
+    "great-expectations>=0.18",
+
+    # MLOps
+    "mlflow>=2.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "ruff>=0.3",
+    "black>=24.2",
+    "ipykernel>=6.29",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = [
+    "config*",
+    "data_pipeline*",
+    "ml*",
+    "agents*",
+    "serving_api*",
+    "rag_index*",
+    "mlops*",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
