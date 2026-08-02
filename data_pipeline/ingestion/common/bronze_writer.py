@@ -73,5 +73,12 @@ def write_bronze(
     else:
         combined = df
 
-    combined.to_parquet(out_path, index=False)
+
+    combined.to_parquet(
+        out_path,
+        index=False,
+        engine="pyarrow",
+        coerce_timestamps="us",
+        allow_truncated_timestamps=True,
+    )
     return out_path

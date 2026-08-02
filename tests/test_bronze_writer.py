@@ -83,3 +83,41 @@ def test_write_bronze_rejects_empty_dataframe(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     with pytest.raises(ValueError, match="Refusing to write an empty dataframe"):
         write_bronze(pd.DataFrame(), source="hurdat2", dataset="tracks")
+
+def test_write_bronze_output_is_spark_readable(tmp_path, monkeypatch, sample_df):
+    """
+    Regression test for a real bug hit while building Phase 3: pandas/
+    pyarrow default to nanosecond-precision Parquet timestamps, which
+    Spark's built-in Parquet reader cannot read at all (raises
+    'Illegal Parquet type: INT64 (TIMESTAMP(NANOS,false))'). This test
+    actually round-trips a Bronze write through Spark, so a future change
+    that reintroduces nanosecond-precision timestamps would fail here
+    immediately rather than being discovered downstream in Phase 3.
+    """
+    import pyarrow.parquet as pq
+
+    monkeypatch.chdir(tmp_path)
+    out_path = write_bronze(sample_df, source="hurdat2", dataset="tracks")
+
+    # Cheap check first: confirm the physical Parquet type is NOT nanoseconds.
+    schema = pq.read_schema(out_path)
+    timestamp_field = schema.field("timestamp")
+    assert timestamp_field.type.unit != "ns", (
+        "Bronze writer regressed to nanosecond-precision timestamps — "
+        "this will break every downstream Spark read (Phase 3+)."
+    )
+
+    # Real check: an actual Spark session can read the file without error.
+    from data_pipeline.databricks_jobs.geo_join_era5 import get_spark_session
+
+    spark = get_spark_session(app_name="test-bronze-spark-readability")
+    try:
+        # IMPORTANT: pass an ABSOLUTE path. The Spark JVM subprocess is
+        # long-lived (reused across test modules via getOrCreate()) and
+        # does not track Python's monkeypatch.chdir() — a relative path
+        # here would resolve against the JVM's original working directory,
+        # not this test's tmp_path, and fail with PATH_NOT_FOUND.
+        sdf = spark.read.parquet(str(out_path.resolve()))
+        assert sdf.count() == 2
+    finally:
+        spark.stop()

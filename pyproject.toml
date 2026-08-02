@@ -33,9 +33,15 @@ dependencies = [
 
     # Data quality
     "great-expectations>=0.18",
+    # Azure (Phase 3+)
+    "azure-storage-blob>=12.19",
+    "azure-identity>=1.15",
 
+    "pyspark==3.5.3",
+    "setuptools<81", 
     # MLOps
     "mlflow>=2.11",
+    
 ]
 
 [project.optional-dependencies]
