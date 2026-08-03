@@ -32,5 +32,10 @@ def run(year: str = "2023", months: list[str] | None = None) -> None:
 
 
 if __name__ == "__main__":
+    import argparse
+
     logging.basicConfig(level=logging.INFO)
-    run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--year", type=str, default="2023", help="Hurricane season year to fetch")
+    args = parser.parse_args()
+    run(year=args.year)
