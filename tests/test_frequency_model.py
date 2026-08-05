@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ml.frequency_severity.event_split import event_level_train_test_split
+from ml.frequency_severity.event_split import stratified_year_split
 from ml.frequency_severity.train_frequency import (
     assert_no_year_leakage,
     train_frequency_model,
@@ -22,8 +22,8 @@ from ml.frequency_severity.train_frequency import (
 
 
 def test_split_never_puts_same_year_in_both_sides():
-    df = pd.DataFrame({"year": list(range(1950, 2024)), "value": range(74)})
-    _train, test = event_level_train_test_split(df, test_size=0.2, seed=1)
+    df = pd.DataFrame({"year": list(range(1950, 2024)), "value": range(74), "had_claim": [0] * 74})
+    _train, test = stratified_year_split(df, test_size=0.2, seed=1)
 
     train_years = set(_train["year"])
     test_years = set(test["year"])
@@ -31,8 +31,9 @@ def test_split_never_puts_same_year_in_both_sides():
 
 
 def test_split_respects_approximate_test_size():
-    df = pd.DataFrame({"year": list(range(1950, 2024))})  # 74 distinct years
-    train, test = event_level_train_test_split(df, test_size=0.2, seed=1)
+    # Need some claim activity for stratification to work
+    df = pd.DataFrame({"year": list(range(1950, 2024)), "had_claim": [1 if i % 5 == 0 else 0 for i in range(74)]})  # 74 distinct years
+    train, test = stratified_year_split(df, test_size=0.2, seed=1)
 
     n_test_years = test["year"].nunique()
     # 20% of 74 ~= 15, allow a little rounding slack
@@ -40,23 +41,23 @@ def test_split_respects_approximate_test_size():
 
 
 def test_split_is_deterministic_given_seed():
-    df = pd.DataFrame({"year": list(range(1950, 2024)), "value": range(74)})
-    train1, test1 = event_level_train_test_split(df, seed=7)
-    train2, test2 = event_level_train_test_split(df, seed=7)
+    df = pd.DataFrame({"year": list(range(1950, 2024)), "value": range(74), "had_claim": [0] * 74})
+    train1, test1 = stratified_year_split(df, seed=7)
+    train2, test2 = stratified_year_split(df, seed=7)
     pd.testing.assert_frame_equal(train1, train2)
     pd.testing.assert_frame_equal(test1, test2)
 
 
 def test_split_rejects_invalid_test_size():
     df = pd.DataFrame({"year": [2000, 2001, 2002]})
-    with pytest.raises(ValueError, match="test_size must be in"):
-        event_level_train_test_split(df, test_size=1.5)
+    with pytest.raises(ValueError, match="test_size must be between"):
+        stratified_year_split(df, test_size=1.5)
 
 
 def test_split_rejects_too_few_years():
-    df = pd.DataFrame({"year": [2000, 2000, 2000]})
-    with pytest.raises(ValueError, match="Need at least 2 distinct years"):
-        event_level_train_test_split(df)
+    df = pd.DataFrame({"year": [2000, 2000, 2000], "had_claim": [0, 0, 0]})
+    with pytest.raises(ValueError, match="At least two different years"):
+        stratified_year_split(df)
 
 
 def test_assert_no_year_leakage_passes_on_clean_split():
@@ -68,7 +69,7 @@ def test_assert_no_year_leakage_passes_on_clean_split():
 def test_assert_no_year_leakage_catches_overlap():
     train = pd.DataFrame({"year": [2000, 2001, 2002]})
     test = pd.DataFrame({"year": [2002, 2003]})  # 2002 overlaps
-    with pytest.raises(AssertionError, match="Event-level split violated"):
+    with pytest.raises(AssertionError, match="Event leakage detected"):
         assert_no_year_leakage(train, test)
 
 
@@ -120,7 +121,7 @@ def synthetic_training_table():
 
 
 def test_frequency_model_beats_random_on_synthetic_signal(synthetic_training_table):
-    train_df, test_df = event_level_train_test_split(
+    train_df, test_df = stratified_year_split(
         synthetic_training_table, test_size=0.3, seed=1
     )
     assert_no_year_leakage(train_df, test_df)
@@ -134,7 +135,7 @@ def test_frequency_model_beats_random_on_synthetic_signal(synthetic_training_tab
 
 
 def test_frequency_model_returns_expected_metrics_keys(synthetic_training_table):
-    train_df, test_df = event_level_train_test_split(
+    train_df, test_df = stratified_year_split(
         synthetic_training_table, test_size=0.3, seed=1
     )
     _model, metrics = train_frequency_model(train_df, test_df)
@@ -153,7 +154,7 @@ def test_frequency_model_returns_expected_metrics_keys(synthetic_training_table)
 def test_frequency_model_handles_test_set_with_unseen_category(synthetic_training_table):
     """A category present in test but not train (e.g. a rare metro_center)
     must not crash the pipeline — reindex should zero-fill it."""
-    train_df, test_df = event_level_train_test_split(
+    train_df, test_df = stratified_year_split(
         synthetic_training_table, test_size=0.3, seed=1
     )
     test_df = test_df.copy()

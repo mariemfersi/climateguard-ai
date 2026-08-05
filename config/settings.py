@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     azure_key_vault_name: str | None = None
     azure_databricks_workspace_url: str | None = None
     azure_ml_workspace_name: str | None = None
+    azure_ml_mlflow_tracking_uri: str | None = None
 
     # --- Phase 9: Azure OpenAI / AI Search (optional until Phase 9) ---
     azure_openai_endpoint: str | None = None

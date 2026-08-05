@@ -1,29 +1,21 @@
 """
-CatBoost frequency classifier — ensemble diversifier against the XGBoost
-frequency model (train_frequency.py).
+CatBoost frequency classifier — ensemble diversifier against XGBoost.
 
-DESIGN RATIONALE (per design doc §5): CatBoost handles high-cardinality
-categorical features (here: metro_center, construction_class, roof_type)
-NATIVELY, without the manual one-hot encoding that train_frequency.py's
-XGBoost model requires. This reduces target-leakage/overfitting risk from
-manual categorical encoding and gives genuine model diversity for
-ensembling — not just two copies of the same algorithm with different
-hyperparameters.
+CatBoost handles categorical features natively.
 """
 
 from __future__ import annotations
 
 import logging
 
+import mlflow
 from catboost import CatBoostClassifier
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import log_loss, roc_auc_score
 
 from ml.frequency_severity.build_training_table import FEATURE_COLUMNS
 from ml.frequency_severity.train_frequency import CATEGORICAL_FEATURES
 
 logger = logging.getLogger(__name__)
-
-_FEATURE_COLS = [c for c in FEATURE_COLUMNS if c != "location_id"]
 
 
 def train_catboost_frequency_model(
@@ -33,33 +25,112 @@ def train_catboost_frequency_model(
     seed: int = 42,
 ) -> tuple[CatBoostClassifier, dict]:
     """
-    Train a CatBoost classifier for claim frequency, using raw categorical
-    columns directly (CatBoost's native categorical handling) rather than
-    one-hot encoding.
+    Train CatBoost frequency model.
+
+    Uses only columns available after preprocessing.
+    Supports removal of metro_center for anti-memorization experiments.
     """
-    X_train = train_df[_FEATURE_COLS].copy()
-    X_test = test_df[_FEATURE_COLS].copy()
+
+    # Keep only available features
+    feature_cols = [
+        c for c in FEATURE_COLUMNS
+        if c != "location_id" and c in train_df.columns
+    ]
+
+    X_train = train_df[feature_cols].copy()
+    X_test = test_df[feature_cols].copy()
+
     y_train = train_df[target_col]
     y_test = test_df[target_col]
 
-    cat_feature_idx = [_FEATURE_COLS.index(c) for c in CATEGORICAL_FEATURES]
+
+    # Only categorical features that still exist
+    cat_features = [
+        c for c in CATEGORICAL_FEATURES
+        if c in feature_cols
+    ]
+
+    cat_feature_idx = [
+        feature_cols.index(c)
+        for c in cat_features
+    ]
+
 
     model = CatBoostClassifier(
-        iterations=200,
-        depth=4,
+        iterations=300,
+        depth=5,
         learning_rate=0.05,
-        cat_features=cat_feature_idx,
+        loss_function="Logloss",
+        eval_metric="AUC",
         random_seed=seed,
+        cat_features=cat_feature_idx,
         verbose=False,
     )
-    model.fit(X_train, y_train)
 
-    train_pred = model.predict_proba(X_train)[:, 1]
-    test_pred = model.predict_proba(X_test)[:, 1]
+
+    model.fit(
+        X_train,
+        y_train
+    )
+
+
+    train_pred = model.predict_proba(X_train)[:,1]
+    test_pred = model.predict_proba(X_test)[:,1]
+
 
     metrics = {
-        "train_auc": roc_auc_score(y_train, train_pred),
-        "test_auc": roc_auc_score(y_test, test_pred),
+        "train_auc": roc_auc_score(
+            y_train,
+            train_pred
+        ),
+
+        "test_auc": roc_auc_score(
+            y_test,
+            test_pred
+        ),
+
+        "train_logloss": log_loss(
+            y_train,
+            train_pred
+        ),
+
+        "test_logloss": log_loss(
+            y_test,
+            test_pred
+        ),
+
+        "n_features": len(feature_cols),
+        "n_categorical_features": len(cat_features),
     }
-    logger.info("CatBoost frequency model metrics: %s", metrics)
+
+
+    logger.info(
+        "CatBoost frequency model metrics: %s",
+        metrics
+    )
+
+
+    with mlflow.start_run(
+        nested=True
+    ):
+
+        mlflow.log_params(
+            {
+                "iterations":300,
+                "depth":5,
+                "learning_rate":0.05,
+                "cat_features":len(cat_features),
+                "model_type":"CatBoost",
+                "task":"frequency_classification",
+            }
+        )
+
+        mlflow.log_metrics(metrics)
+
+        mlflow.catboost.log_model(
+            model,
+            "catboost_frequency_model"
+        )
+
+
     return model, metrics

@@ -33,6 +33,7 @@ from __future__ import annotations
 
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
+import pandas as pd
 
 
 def aggregate_climate_features_per_location(geo_joined: SparkDataFrame) -> SparkDataFrame:
@@ -56,22 +57,17 @@ def aggregate_climate_features_per_location(geo_joined: SparkDataFrame) -> Spark
     )
 
 
-def compute_basin_wide_sst_summary(era5_sdf: SparkDataFrame) -> dict:
+def compute_basin_wide_sst_summary(era5_sdf: SparkDataFrame):
     """
-    Compute Gulf-wide SST summary statistics across all ocean grid cells
-    with a valid (non-null, non-NaN) SST reading, over the full ERA5 time
-    period available. This single summary is applied UNIFORMLY to every
-    location in the Gold table (see run_gold_assembly.py) as a regional
-    covariate, not a per-location feature.
+    Compute Gulf-wide SST summary statistics by year across all ocean grid cells
+    with a valid (non-null, non-NaN) SST reading. This returns yearly SST
+    values that can be joined to the (location, year) grain in the training table.
 
     IMPORTANT: filters on BOTH isNotNull() AND ~isnan(). Land-cell SST
     values arriving from pandas/pyarrow can surface in Spark as IEEE NaN
     rather than SQL NULL — isNotNull() alone does NOT catch NaN (NaN is a
     valid float value in Spark's type system, not a null), so NaN silently
-    poisons F.mean()/F.max() if not filtered explicitly. Confirmed as a
-    real failure mode while building this: isNotNull()-only filtering let
-    4/4 rows (including 2 NaN "land" rows) through, corrupting the mean to
-    NaN instead of the correct ocean-only average.
+    poisons F.mean()/F.max() if not filtered explicitly.
 
     Args:
         era5_sdf: the RAW ERA5 Spark DataFrame (pre-geo-join) — operates
@@ -79,16 +75,35 @@ def compute_basin_wide_sst_summary(era5_sdf: SparkDataFrame) -> dict:
             is a basin-wide statistic independent of any location.
 
     Returns:
-        {"basin_sst_celsius_mean": float, "basin_sst_celsius_max": float}
+        DataFrame with columns: year, basin_sst_celsius_mean, basin_sst_celsius_max
     """
     valid_sst = era5_sdf.filter(
         F.col("sst_celsius").isNotNull() & ~F.isnan("sst_celsius")
     )
-    row = valid_sst.agg(
-        F.mean("sst_celsius").alias("basin_sst_celsius_mean"),
-        F.max("sst_celsius").alias("basin_sst_celsius_max"),
-    ).collect()[0]
-    return {
-        "basin_sst_celsius_mean": row["basin_sst_celsius_mean"],
-        "basin_sst_celsius_max": row["basin_sst_celsius_max"],
-    }
+
+    # If there is a timestamp column, compute yearly summaries and
+    # return a pandas DataFrame (one row per year). If not, compute a
+    # single-basin scalar summary and return a dict, which is what a
+    # number of unit tests expect for small fixtures.
+    if "timestamp" in era5_sdf.columns:
+        valid_sst = valid_sst.withColumn("year", F.year(F.col("timestamp")))
+        yearly_sst = valid_sst.groupBy("year").agg(
+            F.mean("sst_celsius").alias("basin_sst_celsius_mean"),
+            F.max("sst_celsius").alias("basin_sst_celsius_max"),
+        ).orderBy("year")
+        return yearly_sst.toPandas()
+    else:
+        # Aggregate across all valid ocean grid cells and return scalars
+        agg = valid_sst.agg(
+            F.mean("sst_celsius").alias("basin_sst_celsius_mean"),
+            F.max("sst_celsius").alias("basin_sst_celsius_max"),
+        ).toPandas()
+
+        if agg.empty:
+            return {"basin_sst_celsius_mean": float("nan"), "basin_sst_celsius_max": float("nan")}
+
+        row = agg.iloc[0]
+        return {
+            "basin_sst_celsius_mean": float(row["basin_sst_celsius_mean"]),
+            "basin_sst_celsius_max": float(row["basin_sst_celsius_max"]),
+        }

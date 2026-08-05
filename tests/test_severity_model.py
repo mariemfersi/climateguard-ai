@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ml.frequency_severity.event_split import event_level_train_test_split
+from ml.frequency_severity.event_split import stratified_year_split
 from ml.frequency_severity.train_frequency import prepare_features
 from ml.frequency_severity.train_severity import (
     MONOTONIC_INCREASING_FEATURE,
@@ -66,7 +66,7 @@ def synthetic_training_table_with_severity_signal():
 def test_severity_model_trains_and_returns_metrics(
     synthetic_training_table_with_severity_signal,
 ):
-    train_df, test_df = event_level_train_test_split(
+    train_df, test_df = stratified_year_split(
         synthetic_training_table_with_severity_signal, test_size=0.3, seed=1
     )
     _model, metrics = train_severity_model(train_df, test_df)
@@ -98,7 +98,7 @@ def test_severity_model_raises_if_no_positive_rows_in_train():
         }
     )
     train_df, test_df = df.iloc[[0]], df.iloc[[1]]
-    with pytest.raises(ValueError, match="No positive"):
+    with pytest.raises(ValueError, match="No claims in training data"):
         train_severity_model(train_df, test_df)
 
 
@@ -111,7 +111,7 @@ def test_severity_model_respects_monotonic_constraint_on_basin_sst(
     increases, holding all other features fixed — verified via a
     synthetic monotonicity grid, exactly as the roadmap requires.
     """
-    train_df, test_df = event_level_train_test_split(
+    train_df, test_df = stratified_year_split(
         synthetic_training_table_with_severity_signal, test_size=0.3, seed=1
     )
     model, _ = train_severity_model(train_df, test_df)

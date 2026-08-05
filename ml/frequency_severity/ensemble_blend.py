@@ -44,7 +44,9 @@ def blend_frequency_predictions(
     X_xgb = prepare_features(df).reindex(columns=xgb_train_columns, fill_value=0)
     xgb_proba = xgb_model.predict_proba(X_xgb)[:, 1]
 
-    X_cat = df[catboost_feature_cols]
+    # Filter catboost features to only those present in df (handles removed columns)
+    available_catboost_cols = [c for c in catboost_feature_cols if c in df.columns]
+    X_cat = df[available_catboost_cols]
     catboost_proba = catboost_model.predict_proba(X_cat)[:, 1]
 
     blended_proba = (xgb_proba + catboost_proba) / 2.0

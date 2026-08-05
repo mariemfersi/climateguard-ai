@@ -16,11 +16,26 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-import cdsapi
 
 from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+# Expose a module-level `cdsapi` symbol so unit tests can patch
+# `data_pipeline.ingestion.era5.fetch_era5.cdsapi.Client`. If the
+# real `cdsapi` package is present it will be imported below at
+# runtime inside `fetch_era5_raw`; otherwise a lightweight dummy
+# placeholder is provided so `mock.patch` can target the attribute.
+try:  # pragma: no cover - environment dependent
+    import cdsapi as cdsapi  # type: ignore
+except Exception:  # pragma: no cover - allow tests to patch this
+    class _CdsApiPlaceholder:
+        class Client:  # simple placeholder class
+            def __init__(self, *a, **k):
+                raise ImportError("cdsapi not installed")
+
+    cdsapi = _CdsApiPlaceholder()
 
 # [North, West, South, East] — covers the Gulf of Mexico, Florida, and the
 # western Atlantic approach used by most Gulf Coast-landfalling hurricanes.
@@ -55,7 +70,13 @@ def fetch_era5_raw(
 
     logger.info("Requesting ERA5 for year=%s months=%s area=%s", year, months, area)
 
-    client = cdsapi.Client(url=settings.cds_api_url, key=settings.cds_api_key)
+    # Use the module-level `cdsapi` symbol (tests may have patched it).
+    try:
+        client = cdsapi.Client(url=settings.cds_api_url, key=settings.cds_api_key)
+    except Exception as e:  # pragma: no cover - environment-dependent
+        raise ImportError(
+            "cdsapi is required to fetch ERA5 data; install via `pip install cdsapi`"
+        ) from e
 
     dest.parent.mkdir(parents=True, exist_ok=True)
 
