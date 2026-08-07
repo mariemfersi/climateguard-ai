@@ -19,11 +19,11 @@ from agents.orchestrator.orchestrator import AgentOrchestrator
 from agents.pricing_agent.pricing_agent import PricingAgent
 from agents.regulatory_agent.regulatory_agent import RegulatoryAgent
 from agents.scenario_agent.scenario_agent import ScenarioAgent
-from agents.report_writer_agent.numeric_fidelity_validator import (
+from agents.numeric_fidelity_validator import (
     NumericFidelityValidator,
     extract_numbers_from_text,
 )
-from agents.report_writer_agent.report_writer_agent import ReportWriterAgent
+from agents.numeric_fidelity_validator import ReportWriterAgent
 
 
 def test_rag_index_construction_and_search():
