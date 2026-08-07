@@ -4,15 +4,21 @@
 # reach the phase that needs it (see docs/environment_setup.md).
 
 # --- Phase 5: Temporal Fusion Transformer ---
-# torch>=2.2
-# pytorch-forecasting>=1.0
+torch>=2.2
+pytorch-forecasting>=1.0
 
 # --- Phase 6: Graph Neural Network ---
-# torch-geometric>=2.5
+torch-geometric>=2.5
 
 # --- Phase 7: Vision Transformer ---
-# transformers>=4.38
-# torchvision>=0.17
+transformers>=4.38
+torchvision>=0.17
+accelerate>=1.1.0
+datasets>=2.14
+scikit-learn>=1.0
+
+# --- Phase 8: Monte Carlo & Explainability ---
+shap>=0.41
 
 # --- Phase 9: Multi-agent LLM layer ---
 # openai>=1.14

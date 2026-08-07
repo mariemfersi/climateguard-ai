@@ -1,0 +1,23 @@
+================================================================================
+STANDARD REINSURANCE TREATY CLAUSE LIBRARY
+Property Catastrophe Excess of Loss (Cat XL) Reinsurance Treaty Template
+================================================================================
+
+SECTION I — COVERAGE & ATTACHMENT:
+1. This Treaty indemnifies the Reinsured for Ultimate Net Loss in excess of the Attachment Point up to the Limit of Liability specified in the Schedule, in respect of any Loss Occurrence caused by Hurricane, Tropical Storm, Windstorm, or Surge affecting covered property exposures.
+2. Layer Definition:
+   - Attachment Point: $50,000,000 Ultimate Net Loss
+   - Limit of Liability: $100,000,000 Ultimate Net Loss in excess of $50,000,000
+   - Rate-on-Line (ROL): Technical Rate-on-Line calculated as (Expected Loss + Risk Margin) / Limit of Liability.
+
+SECTION II — HOURS CLAUSE (72-HOUR EXTENSION):
+1. All catastrophic losses caused by a single hurricane or tropical cyclone arising from the same atmospheric disturbance within a continuous 72-hour period shall be deemed a single Loss Occurrence.
+2. The Reinsured may choose the time of commencement of the 72-hour period provided no two selected periods overlap and all losses fell within the policy period.
+
+SECTION III — REINSTATEMENT PREMIUM CLAUSE:
+1. In the event of loss payment under this Treaty, the Limit of Liability shall be automatically reinstated from the time of occurrence of the loss event.
+2. The Reinsured shall pay a Reinstatement Premium calculated pro-rata as to the amount of the loss payment divided by the Limit of Liability, multiplied by 100% of the Annual Premium (100% at 100% Rate-on-Line).
+
+SECTION IV — CLIMATE ADJUSTMENT & EXCLUSIONS:
+1. Physical hazard risk metrics and expected loss distributions shall be calibrated using climate-conditioned historical data (NOAA HURDAT2, ERA5 reanalysis).
+2. Unmanned aerial vehicle imagery and Vision Transformer satellite risk verification may be submitted during annual treaty renewal to substantiate exposure risk improvements (e.g. roof reinforcement, mitigation upgrades).

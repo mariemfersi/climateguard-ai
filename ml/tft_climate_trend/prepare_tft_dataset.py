@@ -231,6 +231,73 @@ def build_regional_time_series(
     return regional_ts
 
 
+def stratified_year_split_tft(
+    regional_ts: pd.DataFrame,
+    test_size: float = 0.2,
+    seed: int = 42,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Split regional time series into train/test sets by year to prevent temporal leakage.
+    
+    Ensures no year appears in both train and test sets, which is critical for
+    time series forecasting to avoid data leakage.
+    
+    Args:
+        regional_ts: Regional time series DataFrame with region_id and year columns
+        test_size: Fraction of years to reserve for testing
+        seed: Random seed for reproducibility
+    
+    Returns:
+        Tuple of (train_df, test_df) with disjoint year sets
+    """
+    import numpy as np
+    
+    unique_years = sorted(regional_ts["year"].unique())
+    n_years = len(unique_years)
+    
+    if n_years < 2:
+        raise ValueError("At least two different years required for splitting")
+    
+    # Calculate number of test years
+    n_test_years = max(1, int(n_years * test_size))
+    
+    # Randomly select test years
+    rng = np.random.default_rng(seed)
+    test_years = rng.choice(unique_years, size=n_test_years, replace=False)
+    
+    # Split data
+    test_df = regional_ts[regional_ts["year"].isin(test_years)].copy()
+    train_df = regional_ts[~regional_ts["year"].isin(test_years)].copy()
+    
+    logger.info(f"Temporal split: {len(train_df)} train samples, {len(test_df)} test samples")
+    logger.info(f"Train years: {sorted(train_df['year'].unique())}")
+    logger.info(f"Test years: {sorted(test_df['year'].unique())}")
+    
+    return train_df, test_df
+
+
+def assert_no_year_leakage_tft(train_df: pd.DataFrame, test_df: pd.DataFrame) -> None:
+    """
+    Assert that train and test sets have no overlapping years.
+    
+    Args:
+        train_df: Training DataFrame with year column
+        test_df: Test DataFrame with year column
+    
+    Raises:
+        AssertionError: If any year appears in both train and test sets
+    """
+    train_years = set(train_df["year"].unique())
+    test_years = set(test_df["year"].unique())
+    
+    overlap = train_years & test_years
+    if overlap:
+        raise AssertionError(
+            f"Year leakage detected: {overlap} years appear in both train and test sets. "
+            "This violates temporal independence for time series forecasting."
+        )
+
+
 def prepare_tft_dataset(
     regional_ts: pd.DataFrame,
     encoder_length: int = ENCODER_LENGTH,
@@ -252,15 +319,24 @@ def prepare_tft_dataset(
     # Define static covariates (region-level features that don't change over time)
     static_categoricals = ["region_id"]
     
-    # Define time-varying known covariates (known in advance for forecast horizon)
-    time_varying_known_reals = [
+    # Define time-varying known categoricals (known in advance for forecast horizon)
+    time_varying_known_categoricals = []
+    
+    # Define time-varying unknown categoricals (not known in advance)
+    time_varying_unknown_categoricals = ["enso_phase"]
+    
+    # Define time-varying known reals (known in advance for forecast horizon)
+    # NOTE: Climate covariates (SST, ONI) are NOT known for future years at prediction time.
+    # Marking them as 'unknown' to prevent data leakage. In production, these would need
+    # to be forecasted separately or treated as lagged features only.
+    time_varying_known_reals = []
+    
+    # Define time-varying unknown reals (not known in advance)
+    time_varying_unknown_reals = [
         "basin_sst_celsius_mean",
         "basin_sst_celsius_max",
         "oni_anomaly_celsius",
     ]
-    
-    # Define time-varying unknown covariates (not known in advance)
-    time_varying_unknown_reals = []
     
     # Define target variables
     target = ["frequency", "severity"]
@@ -272,6 +348,8 @@ def prepare_tft_dataset(
         target=target,
         group_ids=["region_id"],
         static_categoricals=static_categoricals,
+        time_varying_known_categoricals=time_varying_known_categoricals,
+        time_varying_unknown_categoricals=time_varying_unknown_categoricals,
         time_varying_known_reals=time_varying_known_reals,
         time_varying_unknown_reals=time_varying_unknown_reals,
         min_encoder_length=encoder_length // 2,   # allow some flexibility; or set equal to encoder_length for fixed windows
@@ -285,12 +363,19 @@ def prepare_tft_dataset(
     return dataset
 
 
-def run_dataset_preparation() -> tuple[TimeSeriesDataSet, Path]:
+def run_dataset_preparation(
+    test_size: float = 0.2,
+    seed: int = 42,
+) -> tuple[TimeSeriesDataSet, TimeSeriesDataSet, Path]:
     """
-    Run full dataset preparation pipeline.
+    Run full dataset preparation pipeline with temporal split.
+    
+    Args:
+        test_size: Fraction of years to reserve for testing
+        seed: Random seed for reproducibility
     
     Returns:
-        Tuple of (TimeSeriesDataSet, path to saved regional time series)
+        Tuple of (train_dataset, test_dataset, path to saved regional time series)
     """
     # Load data
     logger.info("Loading input data...")
@@ -322,13 +407,20 @@ def run_dataset_preparation() -> tuple[TimeSeriesDataSet, Path]:
     
     logger.info(f"Regional time series saved to {ts_path}")
     
-    # Prepare TFT dataset
-    dataset = prepare_tft_dataset(regional_ts)
+    # Perform temporal split to prevent year leakage
+    train_ts, test_ts = stratified_year_split_tft(regional_ts, test_size=test_size, seed=seed)
+    assert_no_year_leakage_tft(train_ts, test_ts)
     
-    return dataset, ts_path
+    # Prepare TFT datasets
+    train_dataset = prepare_tft_dataset(train_ts)
+    test_dataset = prepare_tft_dataset(test_ts)
+    
+    return train_dataset, test_dataset, ts_path
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    dataset, ts_path = run_dataset_preparation()
+    train_dataset, test_dataset, ts_path = run_dataset_preparation()
     logger.info(f"Dataset preparation complete. Time series saved to {ts_path}")
+    logger.info(f"Train dataset: {len(train_dataset)} samples")
+    logger.info(f"Test dataset: {len(test_dataset)} samples")

@@ -1,0 +1,27 @@
+================================================================================
+EIOPA SOLVENCY II DELEGATED REGULATION (EU) 2015/35
+Sub-module: Non-life Catastrophe Risk Sub-module (Article 105 & Article 118-125)
+================================================================================
+
+Article 105 - Non-life Catastrophe Risk Sub-module Scope:
+1. The non-life catastrophe risk sub-module shall reflect the risk arising from extreme or exceptional events, including natural catastrophes (windstorm, hurricane, flood, earthquake, wildfire) and man-made catastrophes.
+2. The Solvency Capital Requirement (SCR) for natural catastrophe risk shall be calculated as a 1-in-200 year Value-at-Risk (VaR at 99.5% confidence level over a 1-year time horizon).
+
+Article 105a - Natural Catastrophe Risk Calculation & Sub-modules:
+1. The SCR for natural catastrophe risk shall equal the combination of the capital requirements for the following peril sub-modules:
+   (a) Natural Catastrophe Windstorm risk;
+   (b) Natural Catastrophe Earthquake risk;
+   (c) Natural Catastrophe Flood risk;
+   (d) Natural Catastrophe Hail and Severe Convective Storm risk;
+   (e) Natural Catastrophe Wildfire risk.
+2. Undertakings shall calculate the net loss distribution after taking into account reinsurance treaties, retrocession, and special purpose vehicles (SPVs).
+
+Article 118 - Reinsurance & Risk Mitigation Recognition:
+1. Reinsurance arrangements (Excess of Loss, Quota Share, Stop Loss) shall be recognized in the SCR calculation only where there is an effective transfer of risk.
+2. Reinsurance contracts shall specify clear attachment points, aggregate limits, reinstatement clauses, and hours clauses (e.g. 72-hour clause for hurricane windstorm events).
+3. Undertakings must evaluate cedent retention and potential exhaustion of layer limits under severe 1-in-100 and 1-in-200 year catastrophe scenarios.
+
+Article 124 - Quantitative Model Governance & Validation:
+1. Catastrophe models, whether internal or vendor-based (AIR, RMS), shall be subject to independent validation.
+2. Climate-change non-stationarity must be explicitly assessed where historical baseline frequency/severity parameters no longer reflect forward-looking physical risk trajectories.
+3. Every quantitative figure in Solvency II reporting (SFCR - Solvency and Financial Condition Report; RSR - Regular Supervisory Report) shall be fully auditable and traceable back to verified data sources.

@@ -110,6 +110,7 @@ def feature_diagnostics(df):
 
 def run(
     use_regional_encoding: bool = False,
+    enforce_validation_gate: bool = False,
 ) -> None:
     # Configure MLflow tracking (Azure ML or local fallback)
     configure_mlflow()
@@ -362,6 +363,12 @@ def run(
             print(
                 f"{k}: {v}"
             )
+
+        mlflow.log_params({
+            "ensemble_blend": "average",
+            "ensemble_base_models": "xgboost,catboost",
+        })
+        mlflow.log_metrics(blend_metrics)
         
         # Validate ensemble
         ensemble_validation = validate_ensemble(
@@ -424,7 +431,7 @@ def run(
             frequency_result=xgb_validation,
             severity_result=severity_validation,
             ensemble_result=ensemble_validation,
-            enforce=False,  # Development mode - log warnings but don't crash
+            enforce=enforce_validation_gate,
         )
 
 
@@ -488,9 +495,15 @@ if __name__ == "__main__":
         action="store_true",
         help="Replace lat/lon with regional clusters to reduce memorization"
     )
+    parser.add_argument(
+        "--enforce-validation-gate",
+        action="store_true",
+        help="Raise an exception if any validation gate check fails"
+    )
     
     args = parser.parse_args()
     
     run(
         use_regional_encoding=args.use_regional_encoding,
+        enforce_validation_gate=args.enforce_validation_gate,
     )
